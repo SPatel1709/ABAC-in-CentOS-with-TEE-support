@@ -1,0 +1,55 @@
+{
+  "dataset": "perf_eval/generated/large",
+  "config_name": "large",
+  "iterations": 75,
+  "modes": [
+    {
+      "mode": "linear",
+      "user": {
+        "allowed": 15000,
+        "denied": 60000,
+        "samples": 75000,
+        "user_time_total_ns": 10893568016,
+        "user_time_mean_ns": 145247.57354666668,
+        "user_time_median_ns": 111264.0,
+        "user_time_min_ns": 73787,
+        "user_time_max_ns": 18097867
+      },
+      "kernel": {
+        "decision_count": 90000,
+        "allow_count": 30000,
+        "deny_count": 60000,
+        "total_time_ns": 9092537767,
+        "min_time_ns": 54713,
+        "max_time_ns": 17028885,
+        "prev_access_time_ns": 97199,
+        "mode": "linear",
+        "last_access_ns": 97199
+      }
+    },
+    {
+      "mode": "tree",
+      "user": {
+        "allowed": 15000,
+        "denied": 60000,
+        "samples": 75000,
+        "user_time_total_ns": 10798933081,
+        "user_time_mean_ns": 143985.77441333333,
+        "user_time_median_ns": 111473.0,
+        "user_time_min_ns": 70656,
+        "user_time_max_ns": 18753472
+      },
+      "kernel": {
+        "decision_count": 90000,
+        "allow_count": 30000,
+        "deny_count": 60000,
+        "total_time_ns": 9050003532,
+        "min_time_ns": 52168,
+        "max_time_ns": 17440218,
+        "prev_access_time_ns": 85089,
+        "mode": "tree",
+        "last_access_ns": 85089
+      }
+    }
+  ]
+}

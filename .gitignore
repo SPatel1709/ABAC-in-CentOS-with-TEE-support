@@ -1,0 +1,12 @@
+/linux-6.19.8-abac/
+/linux-6.19.8.tar.xz
+/abac_lsm_2022-master/
+/kernel_patch/tmp/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/

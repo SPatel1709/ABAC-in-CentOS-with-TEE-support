@@ -1,0 +1,116 @@
+{
+  "dataset": "perf_eval/generated/sample",
+  "config_name": "sample",
+  "iterations": 25,
+  "hashmap_supported": true,
+  "modes": [
+    {
+      "mode": "linear",
+      "hashmap_enabled": false,
+      "label": "neither",
+      "user": {
+        "allowed": 500,
+        "denied": 2000,
+        "samples": 2500,
+        "user_time_total_ns": 74052989,
+        "user_time_mean_ns": 29621.1956,
+        "user_time_median_ns": 14817.0,
+        "user_time_min_ns": 9343,
+        "user_time_max_ns": 5522049
+      },
+      "kernel": {
+        "decision_count": 3000,
+        "allow_count": 1000,
+        "deny_count": 2000,
+        "total_time_ns": 24730401,
+        "min_time_ns": 3251,
+        "max_time_ns": 1049249,
+        "prev_access_time_ns": 4404,
+        "mode": "linear",
+        "hashmap_enabled": false,
+        "last_access_ns": 4404
+      }
+    },
+    {
+      "mode": "tree",
+      "hashmap_enabled": false,
+      "label": "tree_only",
+      "user": {
+        "allowed": 500,
+        "denied": 2000,
+        "samples": 2500,
+        "user_time_total_ns": 35671928,
+        "user_time_mean_ns": 14268.7712,
+        "user_time_median_ns": 11071.0,
+        "user_time_min_ns": 8808,
+        "user_time_max_ns": 273004
+      },
+      "kernel": {
+        "decision_count": 3000,
+        "allow_count": 1000,
+        "deny_count": 2000,
+        "total_time_ns": 13453883,
+        "min_time_ns": 2634,
+        "max_time_ns": 252218,
+        "prev_access_time_ns": 5968,
+        "mode": "tree",
+        "hashmap_enabled": false,
+        "last_access_ns": 5968
+      }
+    },
+    {
+      "mode": "linear",
+      "hashmap_enabled": true,
+      "label": "hashmap_only",
+      "user": {
+        "allowed": 500,
+        "denied": 2000,
+        "samples": 2500,
+        "user_time_total_ns": 37293251,
+        "user_time_mean_ns": 14917.3004,
+        "user_time_median_ns": 9055.0,
+        "user_time_min_ns": 7243,
+        "user_time_max_ns": 1520101
+      },
+      "kernel": {
+        "decision_count": 3000,
+        "allow_count": 1000,
+        "deny_count": 2000,
+        "total_time_ns": 10130519,
+        "min_time_ns": 1359,
+        "max_time_ns": 1368309,
+        "prev_access_time_ns": 2305,
+        "mode": "linear",
+        "hashmap_enabled": true,
+        "last_access_ns": 2305
+      }
+    },
+    {
+      "mode": "tree",
+      "hashmap_enabled": true,
+      "label": "tree_and_hashmap",
+      "user": {
+        "allowed": 500,
+        "denied": 2000,
+        "samples": 2500,
+        "user_time_total_ns": 24346803,
+        "user_time_mean_ns": 9738.7212,
+        "user_time_median_ns": 7491.0,
+        "user_time_min_ns": 6297,
+        "user_time_max_ns": 100549
+      },
+      "kernel": {
+        "decision_count": 3000,
+        "allow_count": 1000,
+        "deny_count": 2000,
+        "total_time_ns": 4307724,
+        "min_time_ns": 823,
+        "max_time_ns": 30869,
+        "prev_access_time_ns": 2264,
+        "mode": "tree",
+        "hashmap_enabled": true,
+        "last_access_ns": 2264
+      }
+    }
+  ]
+}

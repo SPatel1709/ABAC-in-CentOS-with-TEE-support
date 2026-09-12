@@ -1,0 +1,34 @@
+{
+  "name": "large",
+  "seed": 42,
+  "iterations": 75,
+  "warmup_iterations": 5,
+  "user": {
+    "count": 50,
+    "attrs": 8,
+    "values_per_attr": 6,
+    "assigned_attrs_per_entity": 4
+  },
+  "obj": {
+    "count": 1000,
+    "attrs": 8,
+    "values_per_attr": 6,
+    "assigned_attrs_per_entity": 4
+  },
+  "env": {
+    "attrs": 3,
+    "values_per_attr": 3,
+    "assigned_attrs_per_rule": 1
+  },
+  "policy": {
+    "count": 2000,
+    "user_attrs_per_rule": 3,
+    "obj_attrs_per_rule": 3,
+    "deny_ratio": 0.25
+  },
+  "benchmark": {
+    "guaranteed_read_allow_objects": 200,
+    "guaranteed_user_attr": "bench_user=allow",
+    "guaranteed_object_attr": "bench_obj=allow"
+  }
+}
