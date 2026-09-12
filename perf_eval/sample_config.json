@@ -1,0 +1,34 @@
+{
+  "name": "sample",
+  "seed": 42,
+  "iterations": 25,
+  "warmup_iterations": 3,
+  "user": {
+    "count": 20,
+    "attrs": 5,
+    "values_per_attr": 4,
+    "assigned_attrs_per_entity": 3
+  },
+  "obj": {
+    "count": 100,
+    "attrs": 5,
+    "values_per_attr": 4,
+    "assigned_attrs_per_entity": 3
+  },
+  "env": {
+    "attrs": 2,
+    "values_per_attr": 2,
+    "assigned_attrs_per_rule": 1
+  },
+  "policy": {
+    "count": 200,
+    "user_attrs_per_rule": 2,
+    "obj_attrs_per_rule": 2,
+    "deny_ratio": 0.25
+  },
+  "benchmark": {
+    "guaranteed_read_allow_objects": 20,
+    "guaranteed_user_attr": "bench_user=allow",
+    "guaranteed_object_attr": "bench_obj=allow"
+  }
+}
