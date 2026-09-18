@@ -274,8 +274,8 @@ bool abac_resolve_linear(unsigned int UID, char *path, int mask)
 
 	oattr = get_inherited_obj_avp(path, obj_attr);
 	if (!oattr) {
-		/* If an object doesn't have attributes, it isn't covered by the policy */
-		return true;
+		/* A protected but unlabelled object fails closed. */
+            return false;
 	}
 
 	if (!policy)
@@ -328,8 +328,8 @@ bool abac_resolve_tree(unsigned int UID, char *path, int mask)
 
 	oattr = get_inherited_obj_avp(path, obj_attr);
 	if (!oattr) {
-		/* If an object doesn't have attributes, it isn't covered by the policy */
-		return true;
+		/* A protected but unlabelled object fails closed. */
+            return false;
 	}
 
 	if (!policy || !policy->tree)

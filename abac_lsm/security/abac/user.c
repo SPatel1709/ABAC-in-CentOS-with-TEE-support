@@ -21,26 +21,40 @@ void destroy_user_list(abac_user *head) {
 
 static abac_user *parse_line(char *buffer, int start, int end)
 {
-	/* Parse a single line of the buffer */
-	int i, uid_len;
-	unsigned int uid;
-	abac_user *u = kcalloc(1, sizeof(abac_user), GFP_KERNEL);
-	int delim = findidx(buffer, ':', start, end);
-	uid_len = delim - start + 1;
-	char *uidbuf = kcalloc(delim - start + 1, sizeof(char), GFP_KERNEL);
-	for (i = 0; i < uid_len; i++) {
-		uidbuf[i] = buffer[start + i];
-	}
-	uidbuf[delim - start] = '\0';
-	if (kstrtouint(uidbuf, 10, &uid) != 0) {
-		printk("Invalid uidbuf %s\n", uidbuf);
-		kfree(u);
-		return NULL;
-	}
-	u->uid = uid;
-	u->attrs = parse_avp_section(buffer, delim + 1, end);
-	u->next = NULL;
-	return u;
+        int uid_len;
+        int delim;
+        unsigned int uid;
+        char *uidbuf;
+        abac_user *u;
+
+        if (!buffer || end <= start)
+                return NULL;
+
+        delim = findidx(buffer, ':', start, end);
+        if (delim < start || delim >= end)
+                return NULL;
+
+        uid_len = delim - start;
+        uidbuf = kcalloc(uid_len + 1, sizeof(char), GFP_KERNEL);
+        if (!uidbuf)
+                return NULL;
+
+        memcpy(uidbuf, buffer + start, uid_len);
+        uidbuf[uid_len] = '\0';
+
+        if (kstrtouint(uidbuf, 10, &uid) != 0) {
+                kfree(uidbuf);
+                return NULL;
+        }
+        kfree(uidbuf);
+
+        u = kcalloc(1, sizeof(*u), GFP_KERNEL);
+        if (!u)
+                return NULL;
+
+        u->uid = uid;
+        u->attrs = parse_avp_section(buffer, delim + 1, end);
+        return u;
 }
 
 abac_user *parse_user_attr(char *buffer, int length)
@@ -63,6 +77,10 @@ abac_user *parse_user_attr(char *buffer, int length)
 	for (i = 0; i < length; i++) {
 		if (buffer[i] == '\n') {
 			end = i;
+                        if (end <= start) {
+                                start = i + 1;
+                                continue;
+                        }
 			if (cursor) {
 				cursor->next = parse_line(buffer, start, end);
 				cursor = cursor->next;

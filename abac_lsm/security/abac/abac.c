@@ -53,7 +53,7 @@ static int abac_file_permission(struct file *file, int mask)
 	// if the policy is not yet initalized, DENY permission
 	if (policy == NULL || user_attr == NULL || obj_attr == NULL) {
 		kfree(buff);
-		return 0;
+		return -EPERM;
 	}
 	start_ns = abac_recording ? ktime_get_ns() : 0;
 	allowed = abac_resolve(UID, path, mask);

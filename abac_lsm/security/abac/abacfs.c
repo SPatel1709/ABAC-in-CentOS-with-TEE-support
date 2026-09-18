@@ -69,17 +69,20 @@ void abac_record_decision(u64 elapsed_ns, bool allowed)
 
 bool abac_path_is_covered(const char *path)
 {
-	bool included = true;
+        if (!path || path[0] != '/')
+                return false;
 
-	if (!path || path[0] != '/')
-		return false;
-	if (abac_include_paths)
-		included = path_matches_entries(path, abac_include_paths);
-	if (!included)
-		return false;
-	if (abac_exclude_paths && path_matches_entries(path, abac_exclude_paths))
-		return false;
-	return true;
+        /* No configured scope means ABAC is not ready to enforce yet. */
+        if (!abac_include_paths)
+                return false;
+        if (!path_matches_entries(path, abac_include_paths))
+                return false;
+
+        if (abac_exclude_paths &&
+            path_matches_entries(path, abac_exclude_paths))
+                return false;
+
+        return true;
 }
 
 // method for opening policy file
@@ -537,7 +540,7 @@ static int __init abac_create_fs(void)
 	}
 
 	// create the policy file
-	policy_file = securityfs_create_file("policy", 0666, abacfs, NULL,
+	policy_file = securityfs_create_file("policy", 0600, abacfs, NULL,
 					     &policy_fops);
 	if (!policy_file) {
 		printk(KERN_ERR
@@ -549,7 +552,7 @@ static int __init abac_create_fs(void)
 	       "ABAC LSM: Created file /sys/kernel/security/abac/policy");
 
 	// create the user attributes file
-	user_attr_file = securityfs_create_file("user_attr", 0666, abacfs, NULL,
+	user_attr_file = securityfs_create_file("user_attr", 0600, abacfs, NULL,
 						&user_attr_fops);
 	if (!user_attr_file) {
 		printk(KERN_ERR
@@ -561,7 +564,7 @@ static int __init abac_create_fs(void)
 	       "ABAC LSM: Created file /sys/kernel/security/abac/user_attr");
 
 	// create the object attributes file
-	obj_attr_file = securityfs_create_file("obj_attr", 0666, abacfs, NULL,
+	obj_attr_file = securityfs_create_file("obj_attr", 0600, abacfs, NULL,
 					       &obj_attr_fops);
 	if (!obj_attr_file) {
 		printk(KERN_ERR
@@ -573,7 +576,7 @@ static int __init abac_create_fs(void)
 	       "ABAC LSM: Created file /sys/kernel/security/abac/obj_attr");
 
 	// create the environment attributes file
-	env_attr_file = securityfs_create_file("env_attr", 0666, abacfs, NULL,
+	env_attr_file = securityfs_create_file("env_attr", 0600, abacfs, NULL,
 					       &env_attr_fops);
 	if (!env_attr_file) {
 		printk(KERN_ERR
@@ -584,7 +587,7 @@ static int __init abac_create_fs(void)
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/env_attr");
 
-	action_file = securityfs_create_file("action", 0666, abacfs, NULL,
+	action_file = securityfs_create_file("action", 0600, abacfs, NULL,
 					     &action_fops);
 	if (!action_file) {
 		printk(KERN_ERR
@@ -617,7 +620,7 @@ static int __init abac_create_fs(void)
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/stats");
 
-	mode_file = securityfs_create_file("mode", 0666, abacfs, NULL,
+	mode_file = securityfs_create_file("mode", 0600, abacfs, NULL,
 					   &mode_fops);
 	if (!mode_file) {
 		printk(KERN_ERR
@@ -628,7 +631,7 @@ static int __init abac_create_fs(void)
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/mode");
 
-	hashmap_file = securityfs_create_file("hashmap", 0666, abacfs, NULL,
+	hashmap_file = securityfs_create_file("hashmap", 0600, abacfs, NULL,
 					      &hashmap_fops);
 	if (!hashmap_file) {
 		printk(KERN_ERR
@@ -639,7 +642,7 @@ static int __init abac_create_fs(void)
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/hashmap");
 
-	include_paths_file = securityfs_create_file("include_paths", 0666, abacfs,
+	include_paths_file = securityfs_create_file("include_paths", 0600, abacfs,
 						    NULL, &include_paths_fops);
 	if (!include_paths_file) {
 		printk(KERN_ERR
@@ -650,7 +653,7 @@ static int __init abac_create_fs(void)
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/include_paths");
 
-	exclude_paths_file = securityfs_create_file("exclude_paths", 0666, abacfs,
+	exclude_paths_file = securityfs_create_file("exclude_paths", 0600, abacfs,
 						    NULL, &exclude_paths_fops);
 	if (!exclude_paths_file) {
 		printk(KERN_ERR
