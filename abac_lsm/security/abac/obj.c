@@ -22,7 +22,6 @@ void destroy_obj_list(abac_obj *head) {
 static abac_obj *parse_line(char *buffer, int start, int end)
 {
 	/* Parse a single line of the buffer */
-	int i;
 	int delim = findidx(buffer, ':', start, end);
 	if (delim - start >= PATH_MAX) {
 		printk("buffer: %s, %d", buffer, delim);
@@ -50,10 +49,10 @@ abac_obj *parse_obj_attr(char *buffer, int length)
 	}
 	int start = 0;
 	int end = 0;
-	int i;
 	abac_obj *cursor, *head;
 	cursor = NULL;
 	head = NULL;
+	int i;
 	for (i = 0; i < length; i++) {
 		if (buffer[i] == '\n') {
 			end = i;

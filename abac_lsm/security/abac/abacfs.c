@@ -526,7 +526,7 @@ static void destroy_abac_fs(void)
 }
 
 /* create the abac filesystem */
-static void abac_create_fs(void)
+static int __init abac_create_fs(void)
 {
 	// create the root 'abac' directory
 	abacfs = securityfs_create_dir("abac", NULL);
@@ -543,7 +543,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/policy");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/policy");
@@ -555,7 +555,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/user_attr");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/user_attr");
@@ -567,7 +567,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/obj_attr");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/obj_attr");
@@ -579,7 +579,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/env_attr");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/env_attr");
@@ -590,7 +590,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/action");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/action");
@@ -601,7 +601,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/perf");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/perf");
@@ -612,7 +612,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/stats");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/stats");
@@ -623,7 +623,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/mode");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/mode");
@@ -634,7 +634,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/hashmap");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/hashmap");
@@ -645,7 +645,7 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/include_paths");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/include_paths");
@@ -656,13 +656,14 @@ static void abac_create_fs(void)
 		printk(KERN_ERR
 		       "ABAC LSM: Failed to create file /sys/kernel/security/abac/exclude_paths");
 		destroy_abac_fs();
-		return;
+		return -ENOMEM;
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/exclude_paths");
 
 	abac_reset_perf_stats();
 	printk(KERN_INFO "ABAC LSM: Securityfs Initialized");
+	return 0;
 }
 
 fs_initcall(abac_create_fs);

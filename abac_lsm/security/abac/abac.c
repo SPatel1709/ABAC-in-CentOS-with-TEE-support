@@ -14,14 +14,14 @@
 #include <linux/cred.h>
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
+#include <linux/err.h>
 #include "abacfs.h"
 #include "resolve.h"
 
 // get full filename
 char *get_full_name(struct file *file, char *buf, int buflen)
 {
-	struct dentry *dentry = file->f_path.dentry;
-	char *ret = dentry_path_raw(dentry, buf, buflen);
+	char *ret = d_path(&file->f_path, buf, buflen);
 	return ret;
 }
 
@@ -36,9 +36,15 @@ static int abac_file_permission(struct file *file, int mask)
 		return 0;
 	}
 	char *path = NULL;
-	struct dentry *dentry = file->f_path.dentry;
 	char *buff = kmalloc(PATH_MAX, GFP_KERNEL);
-	path = dentry_path_raw(dentry, buff, PATH_MAX);
+	if (!buff)
+		return -ENOMEM;
+	path = d_path(&file->f_path, buff, PATH_MAX);
+	if (IS_ERR(path)) {
+		int err = PTR_ERR(path);
+		kfree(buff);
+		return err;
+	}
 	// if the path is not secured, don't evaluate
 	if (!abac_path_is_covered(path)) {
 		kfree(buff);
@@ -47,7 +53,7 @@ static int abac_file_permission(struct file *file, int mask)
 	// if the policy is not yet initalized, DENY permission
 	if (policy == NULL || user_attr == NULL || obj_attr == NULL) {
 		kfree(buff);
-		return -EPERM;
+		return 0;
 	}
 	start_ns = abac_recording ? ktime_get_ns() : 0;
 	allowed = abac_resolve(UID, path, mask);
@@ -63,14 +69,18 @@ static int abac_file_permission(struct file *file, int mask)
 }
 
 // The hooks we wish to be installed.
-static struct security_hook_list abac_hooks[] __lsm_ro_after_init = {
+static struct lsm_id abac_lsmid __ro_after_init = {
+	.name = "abac",
+};
+
+static struct security_hook_list abac_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(file_permission, abac_file_permission),
 };
 
 // Initialize our module.
 static int __init abac_init(void)
 {
-	security_add_hooks(abac_hooks, ARRAY_SIZE(abac_hooks), "abac");
+	security_add_hooks(abac_hooks, ARRAY_SIZE(abac_hooks), &abac_lsmid);
 	printk(KERN_INFO
 	       "ABAC LSM: Initialized.\n Protected files are selected by ABAC include/exclude path rules.\n");
 	return 0;

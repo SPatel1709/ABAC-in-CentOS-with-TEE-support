@@ -205,7 +205,7 @@ static avp *get_inherited_obj_avp(char *path, abac_obj *head)
 {
 	avp *merged = NULL;
 	avp *attrs;
-	char prefix[PATH_MAX];
+	char *prefix;
 	int i;
 	int path_len;
 
@@ -227,6 +227,10 @@ static avp *get_inherited_obj_avp(char *path, abac_obj *head)
 		return merged;
 	}
 
+	prefix = kmalloc(PATH_MAX, GFP_KERNEL);
+	if (!prefix)
+		return NULL;
+
 	for (i = 1; i < path_len; i++) {
 		if (path[i] != '/')
 			continue;
@@ -237,6 +241,7 @@ static avp *get_inherited_obj_avp(char *path, abac_obj *head)
 			continue;
 		if (!merge_avp_list(&merged, attrs)) {
 			destroy_avp_list(merged);
+			kfree(prefix);
 			return NULL;
 		}
 	}
@@ -244,9 +249,11 @@ static avp *get_inherited_obj_avp(char *path, abac_obj *head)
 	attrs = get_obj_avp(path, head);
 	if (attrs && !merge_avp_list(&merged, attrs)) {
 		destroy_avp_list(merged);
+		kfree(prefix);
 		return NULL;
 	}
 
+	kfree(prefix);
 	return merged;
 }
 
