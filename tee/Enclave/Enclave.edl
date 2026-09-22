@@ -1,0 +1,14 @@
+enclave {
+        trusted {
+                public int ecall_load_rule(
+                        [in, size=rule_size] const uint8_t *rule_data,
+                        size_t rule_size);
+
+                public int ecall_evaluate_rule(
+                        [in, size=request_size] const uint8_t *request_data,
+                        size_t request_size,
+                        [out] int *matched);
+
+                public int ecall_clear_rules();
+        };
+};
