@@ -1,12 +1,3 @@
-app
-*.o
-*.so
-App/Enclave_u.c
-App/Enclave_u.h
-Enclave/Enclave_t.c
-Enclave/Enclave_t.h
-Enclave/Enclave_private_test.pem
-
 SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= HW
 SGX_DEBUG ?= 1
@@ -18,12 +9,12 @@ SGX_LIBDIR := $(SGX_SDK)/lib64
 
 COMMON_FLAGS := -m64 -O2 -Wall -Wextra -std=c11
 
-APP_FLAGS := $(COMMON_FLAGS) -I$(SGX_SDK)/include -IApp -IInclude
+APP_FLAGS := $(COMMON_FLAGS) -I$(SGX_SDK)/include -IApp -I../abac_lsm/security/abac/include
 APP_LIBS := -L$(SGX_LIBDIR) -lsgx_urts -lpthread
 
 ENCLAVE_FLAGS := $(COMMON_FLAGS) -nostdinc -fvisibility=hidden -fpie \
 	-fstack-protector -I$(SGX_SDK)/include \
-	-I$(SGX_SDK)/include/tlibc -IEnclave -IInclude
+	-I$(SGX_SDK)/include/tlibc -IEnclave -I../abac_lsm/security/abac/include
 
 ENCLAVE_LIBS := -m64 -Wl,--no-undefined -nostdlib -nodefaultlibs \
 	-nostartfiles -L$(SGX_LIBDIR) \
@@ -35,11 +26,12 @@ ENCLAVE_LIBS := -m64 -Wl,--no-undefined -nostdlib -nodefaultlibs \
 	-Wl,--gc-sections -Wl,--version-script=Enclave/Enclave.lds
 
 APP_OBJECTS := App/App.o App/Enclave_u.o
+DAEMON_OBJECTS := App/Daemon.o App/Enclave_u.o
 ENCLAVE_OBJECTS := Enclave/Enclave.o Enclave/Enclave_t.o
 
 .PHONY: all clean run
 
-all: app Enclave/enclave.signed.so
+all: app abac-tee-daemon Enclave/enclave.signed.so
 
 App/Enclave_u.c App/Enclave_u.h: Enclave/Enclave.edl
 	$(SGX_EDGER8R) --untrusted $< --search-path Enclave \
@@ -49,7 +41,10 @@ Enclave/Enclave_t.c Enclave/Enclave_t.h: Enclave/Enclave.edl
 	$(SGX_EDGER8R) --trusted $< --search-path Enclave \
 		--search-path $(SGX_SDK)/include --trusted-dir Enclave
 
-App/App.o: App/App.c App/Enclave_u.h Include/abac_tee_protocol.h
+App/App.o: App/App.c App/Enclave_u.h ../abac_lsm/security/abac/include/abac_tee_protocol.h
+	$(CC) $(APP_FLAGS) -c $< -o $@
+
+App/Daemon.o: App/Daemon.c App/Enclave_u.h ../abac_lsm/security/abac/include/abac_tee_protocol.h
 	$(CC) $(APP_FLAGS) -c $< -o $@
 
 App/Enclave_u.o: App/Enclave_u.c App/Enclave_u.h
@@ -58,8 +53,11 @@ App/Enclave_u.o: App/Enclave_u.c App/Enclave_u.h
 app: $(APP_OBJECTS)
 	$(CC) $(COMMON_FLAGS) $^ -o $@ $(APP_LIBS)
 
+abac-tee-daemon: $(DAEMON_OBJECTS)
+	$(CC) $(COMMON_FLAGS) $^ -o $@ $(APP_LIBS)
+
 Enclave/Enclave.o: Enclave/Enclave.c Enclave/Enclave_t.h \
-	Include/abac_tee_protocol.h
+	../abac_lsm/security/abac/include/abac_tee_protocol.h
 	$(CC) $(ENCLAVE_FLAGS) -c $< -o $@
 
 Enclave/Enclave_t.o: Enclave/Enclave_t.c Enclave/Enclave_t.h
@@ -81,7 +79,7 @@ run: all
 	./app
 
 clean:
-	rm -f app $(APP_OBJECTS) $(ENCLAVE_OBJECTS) \
+	rm -f app abac-tee-daemon $(APP_OBJECTS) App/Daemon.o $(ENCLAVE_OBJECTS) \
 		App/Enclave_u.c App/Enclave_u.h \
 		Enclave/Enclave_t.c Enclave/Enclave_t.h \
 		Enclave/enclave.so Enclave/enclave.signed.so

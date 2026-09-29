@@ -10,3 +10,14 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+
+# Intel SGX TEE build outputs
+/tee/app
+/tee/abac-tee-daemon
+/tee/**/*.o
+/tee/**/*.so
+/tee/App/Enclave_u.c
+/tee/App/Enclave_u.h
+/tee/Enclave/Enclave_t.c
+/tee/Enclave/Enclave_t.h
+/tee/Enclave/Enclave_private_test.pem

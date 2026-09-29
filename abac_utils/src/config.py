@@ -13,6 +13,7 @@ CONFIG_USER_ATTRS_FILE = "user_attr.json"
 CONFIG_OBJ_ATTRS_FILE = "obj_attr.json"
 CONFIG_ENV_ATTRS_FILE = "env_attr.json"
 CONFIG_POLICY_FILE = "policy.json"
+CONFIG_TEE_RULES_FILE = "tee_rules.conf"
 CONFIG_AVP_FILE = "avp.json"
 CONFIG_PATH_SCOPE_FILE = "path_scope.json"
 

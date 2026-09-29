@@ -2,4 +2,4 @@
 ccflags-y := -I$(srctree)/security/abac/include/
 obj-$(CONFIG_SECURITY_ABAC) := abac.o
 
-abac-y := avp.o abacfs.o abac.o env.o obj.o pathcfg.o policy.o resolve.o tree.o user.o
+abac-y := avp.o abacfs.o abac.o env.o obj.o pathcfg.o policy.o resolve.o tee_bridge.o tree.o user.o

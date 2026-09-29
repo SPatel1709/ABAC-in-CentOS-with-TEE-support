@@ -6,6 +6,8 @@
 #include "abacfs.h"
 #include "pathcfg.h"
 #include "resolve.h"
+#include "tee_bridge.h"
+#include <linux/err.h>
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/security.h>
@@ -25,6 +27,9 @@ struct dentry *action_file;
 struct dentry *perf_file;
 struct dentry *stats_file;
 struct dentry *mode_file;
+struct dentry *tee_mode_file;
+struct dentry *tee_request_file;
+struct dentry *tee_response_file;
 struct dentry *hashmap_file;
 struct dentry *include_paths_file;
 struct dentry *exclude_paths_file;
@@ -41,6 +46,7 @@ abac_user *user_attr = NULL;
 abac_obj *obj_attr = NULL;
 avp *env_attr = NULL;
 enum abac_resolve_mode abac_mode = ABAC_RESOLVE_TREE;
+enum abac_tee_mode abac_tee_mode = ABAC_TEE_OFF;
 bool abac_use_hashmap;
 int abac_recording;
 struct abac_perf_stats abac_stats;
@@ -410,9 +416,11 @@ static ssize_t mode_write(struct file *filp, const char __user *buffer,
 		return len;
 	}
 	if (strcmp(mode, "tree") == 0) {
-		abac_mode = ABAC_RESOLVE_TREE;
-		return len;
-	}
+                if (abac_tee_mode == ABAC_TEE_ON)
+                        return -EINVAL;
+                abac_mode = ABAC_RESOLVE_TREE;
+                return len;
+        }
 	return -EINVAL;
 }
 
@@ -435,6 +443,44 @@ static const struct file_operations mode_fops = {
 	.open = abac_open,
 	.read = mode_read,
 	.write = mode_write,
+};
+
+static ssize_t tee_mode_read(struct file *filp, char __user *buffer,
+                             size_t len, loff_t *off)
+{
+        const char *state = abac_tee_mode == ABAC_TEE_ON ? "on\n" : "off\n";
+
+        return simple_read_from_buffer(buffer, len, off, state, strlen(state));
+}
+
+static ssize_t tee_mode_write(struct file *filp, const char __user *buffer,
+                              size_t len, loff_t *off)
+{
+        char state[16];
+        size_t copy_len = min(len, sizeof(state) - 1);
+
+        if (copy_from_user(state, buffer, copy_len))
+                return -EFAULT;
+        state[copy_len] = '\0';
+        if (copy_len > 0 && state[copy_len - 1] == '\n')
+                state[copy_len - 1] = '\0';
+
+        if (strcmp(state, "on") == 0) {
+                abac_tee_mode = ABAC_TEE_ON;
+                abac_mode = ABAC_RESOLVE_LINEAR;
+                return len;
+        }
+        if (strcmp(state, "off") == 0) {
+                abac_tee_mode = ABAC_TEE_OFF;
+                return len;
+        }
+        return -EINVAL;
+}
+
+static const struct file_operations tee_mode_fops = {
+        .open = abac_open,
+        .read = tee_mode_read,
+        .write = tee_mode_write,
 };
 
 static ssize_t hashmap_read(struct file *filp, char __user *buffer, size_t len,
@@ -514,6 +560,13 @@ static void destroy_abac_fs(void)
 	if (mode_file) {
 		securityfs_remove(mode_file);
 	}
+        if (tee_mode_file) {
+                securityfs_remove(tee_mode_file);
+        }
+        if (tee_response_file)
+                securityfs_remove(tee_response_file);
+        if (tee_request_file)
+                securityfs_remove(tee_request_file);
 	if (hashmap_file) {
 		securityfs_remove(hashmap_file);
 	}
@@ -630,6 +683,38 @@ static int __init abac_create_fs(void)
 	}
 	printk(KERN_INFO
 	       "ABAC LSM: Created file /sys/kernel/security/abac/mode");
+
+        tee_mode_file = securityfs_create_file("tee_mode", 0600, abacfs,
+                                               NULL, &tee_mode_fops);
+        if (!tee_mode_file) {
+                printk(KERN_ERR
+                       "ABAC LSM: Failed to create file /sys/kernel/security/abac/tee_mode");
+                destroy_abac_fs();
+                return -ENOMEM;
+        }
+        printk(KERN_INFO
+               "ABAC LSM: Created file /sys/kernel/security/abac/tee_mode");
+
+        tee_request_file = securityfs_create_file(
+                "tee_request", 0400, abacfs, NULL,
+                &abac_tee_request_fops);
+        if (IS_ERR(tee_request_file)) {
+                tee_request_file = NULL;
+                destroy_abac_fs();
+                return -ENOMEM;
+        }
+
+        tee_response_file = securityfs_create_file(
+                "tee_response", 0200, abacfs, NULL,
+                &abac_tee_response_fops);
+        if (IS_ERR(tee_response_file)) {
+                tee_response_file = NULL;
+                destroy_abac_fs();
+                return -ENOMEM;
+        }
+
+        printk(KERN_INFO
+               "ABAC LSM: Created TEE request/response files");
 
 	hashmap_file = securityfs_create_file("hashmap", 0600, abacfs, NULL,
 					      &hashmap_fops);
