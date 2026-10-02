@@ -1,6 +1,9 @@
 #ifndef ABAC_TEE_PROTOCOL_H
 #define ABAC_TEE_PROTOCOL_H
 
+
+
+// The types defined in Kernel and SGX are different
 #ifdef __KERNEL__
 #include <linux/types.h>
 typedef __u32 abac_tee_u32;
@@ -42,6 +45,33 @@ typedef struct {
         abac_tee_u32 attribute_count;
         abac_tee_attribute_t attributes[ABAC_TEE_MAX_ATTRIBUTES];
 } abac_tee_rule_data_t;
+
+/*
+ * Protected environmental configuration stored inside the enclave.
+ * workday_mask uses the tm_wday convention:
+ * bit 0 = Sunday, bit 1 = Monday, ..., bit 6 = Saturday.
+ * Time values are minutes after midnight.
+ */
+typedef struct {
+        abac_tee_u32 workday_mask;
+        abac_tee_u32 work_start_minute;
+        abac_tee_u32 work_end_minute;
+} abac_tee_env_config_t;
+
+/* Raw runtime context supplied for one access decision. */
+typedef struct {
+        abac_tee_u32 day_of_week;
+        abac_tee_u32 minute_of_day;
+} abac_tee_env_context_t;
+
+/*
+ * Complete input to enclave evaluation:
+ * candidate rule values collected by the kernel plus raw runtime context.
+ */
+typedef struct {
+        abac_tee_rule_data_t rule;
+        abac_tee_env_context_t environment;
+} abac_tee_eval_data_t;
 
 typedef struct {
         abac_tee_u64 request_id;

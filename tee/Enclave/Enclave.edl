@@ -4,6 +4,10 @@ enclave {
                         [in, size=rule_size] const uint8_t *rule_data,
                         size_t rule_size);
 
+                public int ecall_set_env_config(
+                        [in, size=config_size] const uint8_t *config_data,
+                        size_t config_size);
+
                 public int ecall_evaluate_rule(
                         [in, size=request_size] const uint8_t *request_data,
                         size_t request_size,

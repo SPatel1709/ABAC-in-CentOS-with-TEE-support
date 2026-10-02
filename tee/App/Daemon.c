@@ -10,12 +10,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define ENCLAVE_FILE "Enclave/enclave.signed.so"
 #define TEE_REQUEST_FILE "/sys/kernel/security/abac/tee_request"
 #define TEE_RESPONSE_FILE "/sys/kernel/security/abac/tee_response"
 #define TEE_RULES_FILE "/etc/abac/tee_rules.conf"
+#define TEE_ENV_FILE "/etc/abac/tee_env.conf"
 
 static void set_attribute(abac_tee_rule_data_t *rule, uint32_t index,
                           uint32_t type, const char *name, const char *value)
@@ -35,6 +37,89 @@ static int attribute_type(const char *text)
                 return ABAC_TEE_OBJECT_ATTRIBUTE;
         if (strcmp(text, "env") == 0)
                 return ABAC_TEE_ENV_ATTRIBUTE;
+        return 0;
+}
+
+static int load_environment_config(sgx_enclave_id_t enclave_id,
+                                   const char *path)
+{
+        abac_tee_env_config_t config = { 0 };
+        unsigned int value;
+        int have_mask = 0;
+        int have_start = 0;
+        int have_end = 0;
+        int enclave_status = ABAC_TEE_INVALID_REQUEST;
+        sgx_status_t status;
+        char line[128];
+        FILE *file;
+
+        file = fopen(path, "r");
+        if (!file) {
+                perror("open TEE environment file");
+                return -1;
+        }
+
+        while (fgets(line, sizeof(line), file)) {
+                if (sscanf(line, "workday_mask=%u", &value) == 1) {
+                        config.workday_mask = value;
+                        have_mask = 1;
+                } else if (sscanf(line, "work_start_minute=%u",
+                                  &value) == 1) {
+                        config.work_start_minute = value;
+                        have_start = 1;
+                } else if (sscanf(line, "work_end_minute=%u",
+                                  &value) == 1) {
+                        config.work_end_minute = value;
+                        have_end = 1;
+                }
+        }
+
+        fclose(file);
+
+        if (!have_mask || !have_start || !have_end) {
+                fprintf(stderr, "Incomplete TEE environment configuration\n");
+                return -1;
+        }
+
+        status = ecall_set_env_config(
+                enclave_id, &enclave_status,
+                (const uint8_t *)&config, sizeof(config));
+
+        if (status != SGX_SUCCESS ||
+            enclave_status != ABAC_TEE_SUCCESS) {
+                fprintf(stderr,
+                        "Failed to configure TEE environment: "
+                        "SGX=0x%x enclave=%d\n",
+                        status, enclave_status);
+                return -1;
+        }
+
+        printf("TEE environment configured: mask=%u window=%u-%u\n",
+               config.workday_mask,
+               config.work_start_minute,
+               config.work_end_minute);
+
+        return 0;
+}
+
+static int get_current_environment(abac_tee_env_context_t *environment)
+{
+        struct tm local_time;
+        time_t now;
+
+        if (!environment)
+                return -1;
+
+        now = time(NULL);
+        if (now == (time_t)-1 ||
+            localtime_r(&now, &local_time) == NULL)
+                return -1;
+
+        environment->day_of_week = (uint32_t)local_time.tm_wday;
+        environment->minute_of_day =
+                (uint32_t)(local_time.tm_hour * 60 +
+                           local_time.tm_min);
+
         return 0;
 }
 
@@ -189,6 +274,11 @@ int main(void)
                 return 1;
         }
 
+        if (load_environment_config(enclave_id, TEE_ENV_FILE) != 0) {
+                sgx_destroy_enclave(enclave_id);
+                return 1;
+        }
+
         loaded_rules = load_rules_from_file(enclave_id, TEE_RULES_FILE);
         if (loaded_rules < 0) {
                 sgx_destroy_enclave(enclave_id);
@@ -217,6 +307,7 @@ int main(void)
         for (;;) {
                 abac_tee_ipc_request_t request;
                 abac_tee_ipc_response_t response = { 0 };
+                abac_tee_eval_data_t evaluation = { 0 };
                 int enclave_status = ABAC_TEE_INVALID_REQUEST;
                 int matched = 0;
                 ssize_t bytes;
@@ -234,18 +325,28 @@ int main(void)
                         continue;
                 }
 
-                status = ecall_evaluate_rule(
-                        enclave_id, &enclave_status,
-                        (const uint8_t *)&request.rule,
-                        sizeof(request.rule), &matched);
-
                 response.request_id = request.request_id;
-                if (status != SGX_SUCCESS) {
-                        response.status = ABAC_TEE_SERVICE_UNAVAILABLE;
+                evaluation.rule = request.rule;
+
+                if (get_current_environment(
+                            &evaluation.environment) != 0) {
+                        response.status =
+                                ABAC_TEE_SERVICE_UNAVAILABLE;
                         response.matched = 0;
                 } else {
-                        response.status = enclave_status;
-                        response.matched = matched;
+                        status = ecall_evaluate_rule(
+                                enclave_id, &enclave_status,
+                                (const uint8_t *)&evaluation,
+                                sizeof(evaluation), &matched);
+
+                        if (status != SGX_SUCCESS) {
+                                response.status =
+                                        ABAC_TEE_SERVICE_UNAVAILABLE;
+                                response.matched = 0;
+                        } else {
+                                response.status = enclave_status;
+                                response.matched = matched;
+                        }
                 }
 
                 bytes = write(response_fd, &response, sizeof(response));
